@@ -39,6 +39,7 @@ GLOBAL_MODULES = [
     'util_list',
     'util_mixins',
     'util_path',
+    'util_hash',
     'util_platform',
     'util_stress',
     'util_str',
@@ -74,6 +75,7 @@ if _DOELSE:
     from ubelt import util_list
     from ubelt import util_mixins
     from ubelt import util_path
+    from ubelt import util_hash
     from ubelt import util_platform
     from ubelt import util_stress
     from ubelt import util_str
@@ -96,6 +98,7 @@ if _DOELSE:
                                  take, unique, unique_flags,)
     from ubelt.util_mixins import (NiceRepr,)
     from ubelt.util_path import (augpath, split,)
+    from ubelt.util_hash import (hash_data,)
     from ubelt.util_platform import (DARWIN, LINUX, PY2, PY3, WIN32, cmd, editfile,
                                      ensure_app_cache_dir, ensure_app_resource_dir,
                                      ensuredir, get_app_cache_dir,
