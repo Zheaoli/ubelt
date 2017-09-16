@@ -543,10 +543,10 @@ class CoverageContext(object):  # nocover
             self.stop()
 
 
-class Harness(object):  # nocover
+class TestHarness(object):  # nocover
     """
     Main entry point for general testing
-    run via: `Harness(<pkgname>).run('all')`
+    run via: `TestHarness(<pkgname>).run('all')`
     """
     def __init__(self, package_name, doc=True, unit=True, verbose=None):
         self.package_name = package_name
@@ -662,7 +662,7 @@ def doctest_package(package_name=None, command=None, argv=None,
         else:
             command = None
 
-    tester = Harness(package_name, doc=True, unit=False, verbose=verbose)
+    tester = TestHarness(package_name, doc=True, unit=False, verbose=verbose)
     result = tester.run(command)
     return result
 

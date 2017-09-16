@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 import ubelt as ub
-ub.doctest_package('ubelt', 'all')
+# ub.doctest_package('ubelt', 'all')
 # ub.test_package('ubelt', 'all')
+ub.TestHarness('ubelt').run('all')

@@ -145,7 +145,7 @@ def ensuredir(dpath, mode=0o1777, verbose=None):
         >>> cache_dpath = ub.ensure_app_cache_dir('ubelt')
         >>> dpath = join(cache_dpath, 'ensuredir')
         >>> if exists(dpath):
-        >>>     os.rmdir(dpath)
+        ...     os.rmdir(dpath)
         >>> assert not exists(dpath)
         >>> ub.ensuredir(dpath)
         >>> assert exists(dpath)
@@ -227,9 +227,9 @@ def cmd(command, shell=False, detatch=False, verbose=False, verbout=None):
         >>> info = ub.cmd(('touch', fpath1), detatch=True)
         >>> info = ub.cmd('echo writing2 > ' + fpath2, shell=True, detatch=True)
         >>> while not exists(fpath1):
-        >>>     pass
+        ...     pass
         >>> while not exists(fpath2):
-        >>>     pass
+        ...     pass
         >>> assert ub.readfrom(fpath1) == ''
         >>> assert ub.readfrom(fpath2).strip() == 'writing2'
 

@@ -107,7 +107,7 @@ if _DOELSE:
     from ubelt.util_str import (CaptureStdout, cStringIO, codeblock,
                                 ensure_unicode, hzcat, indent,)
     from ubelt.util_test import (CoverageContext, DocTest, ExitTestException,
-                                 Harness, UnitTest, doctest_package,
+                                 TestHarness, UnitTest, doctest_package,
                                  package_calldefs, parse_docstr_examples,
                                  parse_doctestables, parse_src_want,
                                  parse_unittestables,)

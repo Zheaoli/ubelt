@@ -166,7 +166,8 @@ def parse_calldefs(source=None, fpath=None):
         >>> from ubelt.meta.static_analysis import *  # NOQA
         >>> import ubelt as ub
         >>> fpath = ub.meta.static_analysis.__file__.replace('.pyc', '.py')
-        >>> parse_calldefs(fpath=fpath)
+        >>> calldefs = parse_calldefs(fpath=fpath)
+        >>> assert 'parse_calldefs' in calldefs
     """
     if source is None:  # pragma: no branch
         with open(fpath, 'rb') as file_:
@@ -209,7 +210,7 @@ def package_modnames(package_name, with_pkg=False, with_mod=True, exclude=[]):
         >>> names = list(package_modnames('ubelt', with_pkg, with_mod, exclude))
         >>> assert 'ubelt.meta' not in names
         >>> assert 'ubelt.meta.static_analysis' in names
-        >>> print('\n'.join(names))
+        >>> #print('\n'.join(names))
 
     Example:
         >>> from ubelt.meta.static_analysis import *  # NOQA
@@ -217,7 +218,7 @@ def package_modnames(package_name, with_pkg=False, with_mod=True, exclude=[]):
         >>> names = list(package_modnames('ubelt', with_pkg, with_mod))
         >>> assert 'ubelt.meta' in names
         >>> assert 'ubelt.meta.static_analysis' not in names
-        >>> print('\n'.join(names))
+        >>> #print('\n'.join(names))
     """
     modpath = modname_to_modpath(package_name, hide_init=True)
     if isfile(modpath):
@@ -252,9 +253,9 @@ def modpath_to_modname(modpath):
         >>> import ubelt.meta.static_analysis
         >>> modpath = ubelt.meta.static_analysis.__file__
         >>> modpath = modpath.replace('.pyc', '.py')
-        >>> print('modpath = %r' % (modpath))
+        >>> #print('modpath = %r' % (modpath))
         >>> modname = modpath_to_modname(modpath)
-        >>> print('modname = %r' % (modname,))
+        >>> #print('modname = %r' % (modname,))
         >>> assert modname == 'ubelt.meta.static_analysis'
     """
     modpath_ = abspath(expanduser(modpath))
@@ -348,7 +349,7 @@ def is_complete_statement(lines):
         >>> assert is_complete_statement(['foo = (']) is False
         >>> assert is_complete_statement(['foo = (', "')(')"]) is True
         >>> assert is_complete_statement(
-        >>>     ['foo = (', "'''", ")]'''", ')']) is True
+        ...     ['foo = (', "'''", ")]'''", ')']) is True
         >>> #assert is_complete_statement(['foo = ']) is False
         >>> #assert is_complete_statement(['== ']) is False
 
