@@ -221,7 +221,7 @@ def _convert_hexstr_to_bigbase(hexstr, alphabet, bigbase):
     Packs a long hexstr into a shorter length string with a larger base
 
     Example:
-        >>> from ubelt.util_hash import *
+        >>> from ubelt.util_hash import _ALPHABET_27
         >>> from ubelt.util_hash import _convert_hexstr_to_bigbase
         >>> newbase_str = _convert_hexstr_to_bigbase(
         >>>     'ffffffff', _ALPHABET_27, len(_ALPHABET_27))

@@ -84,10 +84,10 @@ def as_smart_type(var, data_type):
         object:
 
     CommandLine:
-        python -m utool.util_type --exec-as_smart_type
+        python -m ubelt.util_type --exec-as_smart_type
 
     Example:
-        >>> from utool.util_type import *  # NOQA
+        >>> from ubelt.util_smartcast import *  # NOQA
         >>> assert as_smart_type('1', None) == '1'
         >>> assert as_smart_type('1', int) == 1
         >>> assert as_smart_type('(1,3)', 'eval') == (1, 3)
@@ -145,9 +145,9 @@ def parse_nestings2(string, nesters=['()', '[]', '<>', "''", '""'], escape='\\')
     References:
         http://stackoverflow.com/questions/4801403/pyparsing-nested-mutiple-opener-clo
 
-    Example:
-        >>> from utool.util_gridsearch import *  # NOQA
-        >>> import utool as ut
+    DISABLE:
+        >>> from ubelt.util_gridsearch import *  # NOQA
+        >>> import ubelt as ub
         >>> string = r'lambda u: sign(u) * abs(u)**3.0 * greater(u, 0)'
         >>> parsed_blocks = parse_nestings2(string)
         >>> print('parsed_blocks = {!r}'.format(parsed_blocks))
@@ -155,7 +155,7 @@ def parse_nestings2(string, nesters=['()', '[]', '<>', "''", '""'], escape='\\')
         >>> parsed_blocks = parse_nestings2(string)
         >>> print('parsed_blocks = {!r}'.format(parsed_blocks))
         >>> recombined = recombine_nestings(parsed_blocks)
-        >>> print('PARSED_BLOCKS = ' + ut.repr3(parsed_blocks, nl=1))
+        >>> print('PARSED_BLOCKS = ' + ub.repr3(parsed_blocks, nl=1))
         >>> print('recombined = %r' % (recombined,))
         >>> print('orig       = %r' % (string,))
     """
@@ -200,7 +200,7 @@ def parse_nestings2(string, nesters=['()', '[]', '<>', "''", '""'], escape='\\')
         ret1 = pp.Forward()
         # if opener == closer:
         #     closer = pp.Regex('(?<!' + re.escape(closer) + ')')
-        # _NEST = ut.identity
+        # _NEST = ub.identity
         #_NEST = pp.Suppress
         # opener_ = _NEST(opener)
         # closer_ = _NEST(closer)

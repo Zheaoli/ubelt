@@ -13,7 +13,6 @@ TODO:
     * inject_func_as_method
     * inject_func_as_property
     * embed
-    * repr2
     * identity
     * rsync
     * grab_file_url
@@ -26,7 +25,7 @@ TODO:
 from __future__ import absolute_import, division, print_function, unicode_literals
 import sys
 
-__version__ = '0.0.33'
+__version__ = '0.0.35'
 
 GLOBAL_MODULES = [
     'util_arg',
@@ -107,9 +106,11 @@ if _DOELSE:
     from ubelt.util_stress import (find_nth_prime,)
     from ubelt.util_str import (CaptureStdout, cStringIO, codeblock,
                                 ensure_unicode, hzcat, indent,)
-    from ubelt.util_test import (DocExample, ExitTestException, doctest_package,
-                                 parse_docstr_examples, parse_src_want,
-                                 parse_testables,)
+    from ubelt.util_test import (CoverageContext, DocTest, ExitTestException,
+                                 Harness, UnitTest, doctest_package,
+                                 package_calldefs, parse_docstr_examples,
+                                 parse_doctestables, parse_src_want,
+                                 parse_unittestables,)
     from ubelt.util_format import (FormatFuncs, Formatters, dict_itemstrs,
                                    format_dict, format_list, format_object,
                                    join_itemstrs, list_itemstrs, repr2,)
