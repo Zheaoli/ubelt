@@ -314,10 +314,10 @@ def startfile(fpath, verbose=True):  # nocover
     DisableExample:
         >>> # This test interacts with a GUI frontend, not sure how to test.
         >>> import ubelt as ub
-        >>> base = ub.ensure_app_cache_dir('ubelt')
-        >>> fpath1 = join(base, 'test_open.txt')
-        >>> ub.touch(fpath1)
-        >>> proc = ub.startfile(fpath1)
+        >>> base = ub.ensure_app_cache_dir('ubelt')  # doctest: +SKIP
+        >>> fpath1 = join(base, 'test_open.txt')  # doctest: +SKIP
+        >>> ub.touch(fpath1)  # doctest: +SKIP
+        >>> proc = ub.startfile(fpath1)  # doctest: +SKIP
     """
     import pipes
     if verbose:
@@ -354,11 +354,12 @@ def editfile(fpath, verbose=True):  # nocover
         verbose (int): verbosity
 
     DisableExample:
+        >>> # TODO: it would be nice if doctest respected this docblock header.
         >>> # This test interacts with a GUI frontend, not sure how to test.
         >>> import ubelt as ub
-        >>> ub.editfile(ub.util_test.__file__)
-        >>> ub.editfile(ub)
-        >>> ub.editfile(ub.editfile)
+        >>> ub.editfile(ub.util_test.__file__)  # doctest: +SKIP
+        >>> ub.editfile(ub)  # doctest: +SKIP
+        >>> ub.editfile(ub.editfile)  # doctest: +SKIP
     """
     import six
     if not isinstance(fpath, six.string_types):
