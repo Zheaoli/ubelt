@@ -166,6 +166,89 @@ def ensuredir(dpath, mode=0o1777, verbose=None):
     return dpath
 
 
+# def username():
+#     """
+#     Returns the current user's name
+
+#     Returns:
+#         str: name: current users name
+
+#     Example:
+#         >>> from ubelt.util_platform import *
+#         >>> assert userhome() == expanduser('~')
+#     """
+#     # if 'USER' in os.environ:
+#     #     name = os.environ['USER']
+#     # else:
+#     import pwd
+#     name = pwd.getpwuid(os.getuid()).pw_name
+#     import getpass
+#     getpass.getuser()
+#     return name
+
+
+def userhome(username=None):
+    """
+    Returns the user's home directory.
+    If `username` is None, this is the directory for the current user.
+
+    Args:
+        username (str): name of a user on the system
+
+    Returns:
+        str: home_dpath: path to the home directory
+
+    Example:
+        >>> from ubelt.util_platform import *
+        >>> import getpass
+        >>> username = getpass.getuser()
+        >>> assert userhome() == expanduser('~')
+        >>> assert userhome(username) == expanduser('~')
+    """
+    if username is None:
+        if 'HOME' in os.environ:
+            home_dpath = os.environ['HOME']
+        else:  # nocover
+            import pwd
+            home_dpath = pwd.getpwuid(os.getuid()).pw_dir
+    else:
+        import pwd
+        try:
+            pwent = pwd.getpwnam(username)
+        except KeyError:  # nocover
+            raise KeyError('Unknown user: {}'.format(username))
+        home_dpath = pwent.pw_dir
+    return home_dpath
+
+
+def compressuser(path):
+    """
+    Inverse of `os.path.expanduser`
+
+    Args:
+        path (str): path in system file structure
+
+    Returns:
+        str: path: shortened path replacing the home directory with a tilde
+
+    Example:
+        >>> from ubelt.util_platform import *
+        >>> path = expanduser('~')
+        >>> assert path != '~'
+        >>> assert compressuser(path) == '~'
+        >>> assert compressuser(path + '1') == path + '1'
+        >>> assert compressuser(path + '/1') == '~/1'
+    """
+    path = normpath(path)
+    home_dpath = userhome()
+    if path.startswith(home_dpath):
+        if len(path) == len(home_dpath):
+            path = '~'
+        elif path[len(home_dpath)] == os.path.sep:
+            path = '~' + path[len(home_dpath):]
+    return path
+
+
 def _run_process(proc):
     """ helper for cmd """
     while True:
@@ -181,7 +264,7 @@ def _run_process(proc):
             raise StopIteration('process finished')
 
 
-def cmd(command, shell=False, detatch=False, verbose=False, verbout=None):
+def cmd(command, shell=False, detatch=False, verbose=0, verbout=None):
     r"""
     Trying to clean up cmd
 
@@ -189,8 +272,8 @@ def cmd(command, shell=False, detatch=False, verbose=False, verbout=None):
         command (str): bash-like command string or tuple of executable and args
         shell (bool): if True, process is run in shell
         detatch (bool): if True, process is detached and run in background.
-        verbose (int): verbosity mode
-        verbout (bool): if True, `command` writes to stdout in realtime.
+        verbose (int): verbosity mode. Can be 0, 1, 2, or 3.
+        verbout (int): if True, `command` writes to stdout in realtime.
             defaults to True iff verbose > 0. Note when detatch is True
             all stdout is lost.
 
@@ -236,7 +319,6 @@ def cmd(command, shell=False, detatch=False, verbose=False, verbout=None):
     # Doctest:
     #     >>> import ubelt as ub
     #     >>> info = ub.cmd('ping localhost -c 2', verbose=1)
-
     """
     import shlex
     import subprocess
@@ -244,10 +326,20 @@ def cmd(command, shell=False, detatch=False, verbose=False, verbout=None):
     if verbout is None:
         verbout = verbose >= 1
     if verbose >= 2:  # nocover
-        print('+=== START CMD ===')
-        print('Command:')
-        print(command)
-        if verbout and not detatch:
+        if verbose >= 3:
+            print('+=== START CMD ===')
+            print('CWD:' + os.getcwd())
+            print('Command:')
+            print(command)
+        else:
+            import getpass
+            import platform
+            compname = platform.node()
+            username = getpass.getuser()
+            cwd = compressuser(os.getcwd())
+            ps1 = '[ubelt.cmd] {}@{}:{}$ '.format(username, compname, cwd)
+            print(ps1 + command)
+        if verbout >= 3 and not detatch:
             print('----')
             print('Stdout:')
 
@@ -294,7 +386,7 @@ def cmd(command, shell=False, detatch=False, verbose=False, verbout=None):
             'err': err,
             'ret': ret,
         }
-        if verbose >= 2:  # nocover
+        if verbose >= 3:  # nocover
             print('L___ END CMD ___')
     return info
 
