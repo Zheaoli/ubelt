@@ -37,7 +37,7 @@ def parse_src_want(docsrc):
         >>> docsrc = blocks['Example']
         >>> src, want = parse_src_want(docsrc)
         >>> 'I want to see this str'
-        I want to see this str
+        'I want to see this str'
 
     Example:
         >>> from ubelt.util_test import *  # NOQA
@@ -46,15 +46,15 @@ def parse_src_want(docsrc):
         >>> docstr = inspect.getdoc(parse_src_want)
         >>> blocks = dict(docscrape_google.split_google_docblocks(docstr))
         >>> str = (
-            '''
-            TODO: be able to parse docstrings like this.
-            ''')
+        ...   '''
+        ...    TODO: be able to parse docstrings like this.
+        ...    ''')
         >>> print('Intermediate want')
         Intermediate want
         >>> docsrc = blocks['Example']
         >>> src, want = parse_src_want(docsrc)
         >>> 'I want to see this str'
-        I want to see this str
+        'I want to see this str'
     """
     from ubelt.meta import static_analysis as static
 

@@ -40,17 +40,17 @@ class TopLevelVisitor(ast.NodeVisitor):
         >>> from ubelt.meta.static_analysis import *  # NOQA
         >>> import ubelt as ub
         >>> source = ub.codeblock(
-            '''
-            def foo():
-                \"\"\" my docstring \"\"\"
-                def subfunc():
-                    pass
-            def bar():
-                pass
-            class Spam(object):
-                def eggs():
-                    pass
-            ''')
+        ...    '''
+        ...    def foo():
+        ...        \"\"\" my docstring \"\"\"
+        ...        def subfunc():
+        ...            pass
+        ...    def bar():
+        ...        pass
+        ...    class Spam(object):
+        ...        def eggs():
+        ...            pass
+        ...    ''')
         >>> self = TopLevelVisitor.parse(source)
         >>> callnames = set(self.calldefs.keys())
         >>> assert callnames == {'foo', 'bar', 'Spam', 'Spam.eggs'}
@@ -297,7 +297,7 @@ def modname_to_modpath(modname, hide_init=True, hide_main=True):
         >>> modname = 'ubelt.progiter'
         >>> already_exists = modname in sys.modules
         >>> modpath = modname_to_modpath(modname)
-        >>> print('modpath = %r' % (modpath,))
+        >>> #print('modpath = %r' % (modpath,))
         >>> assert already_exists or modname not in sys.modules
 
     Example:
@@ -305,15 +305,15 @@ def modname_to_modpath(modname, hide_init=True, hide_main=True):
         >>> import sys
         >>> modname = 'ubelt.__main__'
         >>> modpath = modname_to_modpath(modname, hide_main=False)
-        >>> print('modpath = %r' % (modpath,))
+        >>> #print('modpath = %r' % (modpath,))
         >>> assert modpath.endswith('__main__.py')
         >>> modname = 'ubelt'
         >>> modpath = modname_to_modpath(modname, hide_init=False)
-        >>> print('modpath = %r' % (modpath,))
+        >>> #print('modpath = %r' % (modpath,))
         >>> assert modpath.endswith('__init__.py')
         >>> modname = 'ubelt'
         >>> modpath = modname_to_modpath(modname, hide_init=False, hide_main=False)
-        >>> print('modpath = %r' % (modpath,))
+        >>> #print('modpath = %r' % (modpath,))
         >>> assert modpath.endswith('__main__.py')
     """
     loader = pkgutil.find_loader(modname)

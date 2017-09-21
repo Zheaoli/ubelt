@@ -66,11 +66,11 @@ def hash_data(data, hashlen=None, alphabet=None):
         >>> counter = [0]
         >>> failed = []
         >>> def check_hash(input_, want=None):
-        >>>     count = counter[0] = counter[0] + 1
-        >>>     got = hash_data(input_)
-        >>>     print('({}) {}'.format(count, got))
-        >>>     if want is not None and not got.startswith(want):
-        >>>         failed.append((got, input_, count, want))
+        ...     count = counter[0] = counter[0] + 1
+        ...     got = hash_data(input_)
+        ...     #print('({}) {}'.format(count, got))
+        ...     if want is not None and not got.startswith(want):
+        ...         failed.append((got, input_, count, want))
         >>> check_hash('1', 'wuvrng')
         >>> check_hash(['1'], 'dekbfpby')
         >>> check_hash(tuple(['1']), 'dekbfpby')
@@ -224,7 +224,7 @@ def _convert_hexstr_to_bigbase(hexstr, alphabet, bigbase):
         >>> from ubelt.util_hash import _ALPHABET_27
         >>> from ubelt.util_hash import _convert_hexstr_to_bigbase
         >>> newbase_str = _convert_hexstr_to_bigbase(
-        >>>     'ffffffff', _ALPHABET_27, len(_ALPHABET_27))
+        ...     'ffffffff', _ALPHABET_27, len(_ALPHABET_27))
         >>> print(newbase_str)
         vxlrmxn
 
@@ -240,10 +240,10 @@ def _convert_hexstr_to_bigbase(hexstr, alphabet, bigbase):
         >>> # for a 27 char alphabet we can get 216
         >>> print('Required length for lossless conversion len2 = %r' % (len2,))
         >>> def info(base, len):
-        >>>     bits = base ** len
-        >>>     print('base = %r' % (base,))
-        >>>     print('len = %r' % (len,))
-        >>>     print('bits = %r' % (bits,))
+        ...     bits = base ** len
+        ...     print('base = %r' % (base,))
+        ...     print('len = %r' % (len,))
+        ...     print('bits = %r' % (bits,))
         >>> info(16, 256)
         >>> info(27, 16)
         >>> info(27, 64)

@@ -103,6 +103,8 @@ class ProgIter(object):
         >>> for n in ub.ProgIter(range(100), verbose=2):
         >>>     # do some work
         >>>     is_prime(n)
+        ...
+
         10000/10000... rate=13294.94 Hz, eta=0:00:00, total=0:00:00, wall=13:34 EST
     """
     def __init__(self, iterable=None, label=None, length=None, freq=1,
@@ -149,6 +151,7 @@ class ProgIter(object):
             >>> n = 3
             >>> with ub.ProgIter(label='manual', length=n, verbose=3) as prog:
             ...     list(prog(range(n)))
+            ...
         """
         self.begin()
         return self
@@ -174,7 +177,9 @@ class ProgIter(object):
             >>> import ubelt as ub
             >>> prog = ub.ProgIter(range(100, 300, 100), show_times=False, verbose=3)
             >>> for n in prog:
-            >>>     prog.set_extra('processesing num {}'.format(n))
+            ...     prog.set_extra('processesing num {}'.format(n))
+            ...
+
              0/2...
              1/2...  processesing num 100
              2/2...  processesing num 200
@@ -212,6 +217,7 @@ class ProgIter(object):
             >>> for _ in range(n):
             ...     prog.step()
             >>> prog.end()
+            ...
 
         Example:
             >>> import ubelt as ub
@@ -220,6 +226,7 @@ class ProgIter(object):
             >>> with ub.ProgIter(label='manual', length=n, verbose=3) as prog:
             ...     for _ in range(n):
             ...         prog.step()
+            ...
         """
         self._iter_idx += inc
         self.update_measurements()
@@ -367,6 +374,8 @@ class ProgIter(object):
             >>> prog = ub.ProgIter(sequence, label='unknown seq', show_times=False, verbose=1)
             >>> for n in prog:
             ...     pass
+            ...
+
             unknown seq   10/?...
         """
         tzname = time.tzname[0]

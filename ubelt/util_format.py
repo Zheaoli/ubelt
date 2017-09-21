@@ -56,6 +56,7 @@ def repr2(val, **kwargs):
         >>> result = repr2(dict_, nl=3, sort=True); print(result)
         >>> result = repr2(dict_, nl=3, sort=False, trailing_sep=False); print(result)
         >>> result = repr2(dict_, nl=3, sort=False, trailing_sep=False, nobr=True); print(result)
+        ...
 
     Example:
         >>> from ubelt.util_format import *
@@ -66,8 +67,9 @@ def repr2(val, **kwargs):
         ...         return {'n{}'.format(d): _nest(d - 1, w + 1), 'm{}'.format(d): _nest(d - 1, w + 1)}
         >>> dict_ = _nest(d=4, w=1)
         >>> result = repr2(dict_, nl=6, precision=2, cbr=1)
-        >>> print('---')
+        >>> #print('---')
         >>> print(result)
+        ...
     """
     if isinstance(val, dict):
         return format_dict(val, **kwargs)
