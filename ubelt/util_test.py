@@ -393,8 +393,6 @@ def package_calldefs(package_name, exclude=[], strict=False):
                 'Module {} does not exist. '
                 'Is it an old pyc file?'.format(modname))
             continue
-
-        strict = 1
         try:
             calldefs = static.parse_calldefs(fpath=modpath)
         except SyntaxError as ex:  # nocover
@@ -436,16 +434,46 @@ def parse_doctestables(package_name, exclude=[], strict=False):
                     yield example
 
 
+def unittest_calldefs(package_name, exclude=[], strict=False):
+    """
+    Statically generates all callable definitions in a package tests dir
+    """
+    from ubelt.meta import static_analysis as static
+    from os.path import join
+    import glob
+
+    basepath = static.modname_to_modpath(package_name, hide_init=True)
+    # TODO: generalize
+    globpat = join(basepath, 'tests', 'test_*')
+    for test_path in glob.glob(globpat, recursive=True):
+        modpath = test_path
+        try:
+            calldefs = static.parse_calldefs(fpath=modpath)
+        except SyntaxError as ex:  # nocover
+            msg = 'Cannot parse modpath={}.\nCaused by={}'
+            msg = msg.format(modpath, ex)
+            if strict:
+                raise Exception(msg)
+            else:
+                warnings.warn(msg)
+                continue
+        else:
+            yield calldefs, modpath
+
+
 def parse_unittestables(package_name, verbose=False):
     """
     Finds all unit tests (functions / methods prefixed with test_) in a package
 
+    CommandLine:
+        python -m ubelt.util_test parse_unittestables
+
     Example:
         >>> from ubelt.util_test import *  # NOQA
-        >>> package_name = 'ubelt.tests'
+        >>> package_name = 'ubelt'
         >>> testables = list(parse_unittestables(package_name, verbose=True))
     """
-    for calldefs, modpath in package_calldefs(package_name):
+    for calldefs, modpath in unittest_calldefs(package_name):
         for callname, calldef in calldefs.items():
             if callname.startswith('test_'):
                 testable = UnitTest(calldef, modpath)
@@ -565,9 +593,11 @@ class TestHarness(object):  # nocover
 
     def collect(self):
         if self.doc:
-            self.testables += list(parse_doctestables(self.package_name))
+            self.doctestables = list(parse_doctestables(self.package_name))
+            self.testables += self.doctestables
         if self.unit:
-            self.testables += list(parse_unittestables(self.package_name))
+            self.unittestables = list(parse_doctestables(self.package_name))
+            self.testables += self.unittestables
 
     def refine(self, command):
         print('gathering tests')
@@ -600,7 +630,9 @@ class TestHarness(object):  # nocover
         if check_coverage is None:
             check_coverage = command == 'all'
 
-        modnames = list({e.modname for e in self.enabled_tests})
+        from ubelt.meta import static_analysis as static
+        modnames = list(static.package_modnames(self.package_name))
+        # modnames = list({e.modname for e in self.enabled_tests})
         with CoverageContext(modnames, enabled=check_coverage):
             n_total = len(self.enabled_tests)
             print('running %d test(s)' % (n_total))
