@@ -108,7 +108,7 @@ if _DOELSE:
     from ubelt.util_str import (CaptureStdout, cStringIO, codeblock,
                                 ensure_unicode, hzcat, indent,)
     from ubelt.util_test import (CoverageContext, DocTest, ExitTestException,
-                                 TestHarness, UnitTest, doctest_package,
+                                 Harness, UnitTest, doctest_package,
                                  package_calldefs, parse_docstr_examples,
                                  parse_doctestables, parse_src_want,
                                  parse_unittestables,)
@@ -117,7 +117,7 @@ if _DOELSE:
                                    join_itemstrs, list_itemstrs, repr2,)
     from ubelt.util_time import (Timer, Timerit, timestamp,)
     from ubelt.progiter import (ProgIter,)
-    
+
     # </AUTOGEN_INIT>
 
 del _DOELSE

@@ -91,8 +91,7 @@ def group_items(item_list, groupid_list, sorted_=True):
         >>> groupid_list = ['protein', 'fruit', 'protein',  'protein', 'dairy',  'fruit']
         >>> result = ub.group_items(item_list, groupid_list)
         >>> #result = ub.repr2(groupid_to_items, nl=False, strvals=False)
-        >>> print(result)
-        {'dairy': ['cheese'], 'fruit': ['jam', 'bannana'], 'protein': ['ham', 'spam', 'eggs']}
+        >>> assert result == {'dairy': ['cheese'], 'fruit': ['jam', 'bannana'], 'protein': ['ham', 'spam', 'eggs']}
     """
     pair_list_ = zip(groupid_list, item_list)
     if sorted_:
@@ -234,7 +233,7 @@ def dict_subset(dict_, keys, default=util_const.NoParam):
         >>> keys = ['K', 'dcvs_clip_max']
         >>> subdict_ = ub.dict_subset(dict_, keys)
         >>> #result = ub.repr2(subdict_, sorted_=True, newlines=False)
-        >>> print(subdict_)
+        >>> print(ub.repr2(subdict_, nl=0))
         {'K': 3, 'dcvs_clip_max': 0.2}
     """
     items = dict_take(dict_, keys, default)

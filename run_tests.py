@@ -5,4 +5,4 @@ if __name__ == '__main__':
     import ubelt as ub
     # ub.doctest_package('ubelt', 'all')
     # ub.test_package('ubelt', 'all')
-    ub.TestHarness('ubelt').run('all')
+    ub.Harness('ubelt').run('all')

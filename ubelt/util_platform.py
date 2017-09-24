@@ -3,6 +3,7 @@ from __future__ import absolute_import, division, print_function, unicode_litera
 from os.path import normpath, expanduser, join, exists
 import os
 import sys
+import itertools as it
 
 PY2 = sys.version_info.major == 2
 PY3 = sys.version_info.major == 3
@@ -249,19 +250,78 @@ def compressuser(path):
     return path
 
 
-def _run_process(proc):
-    """ helper for cmd """
-    while True:
-        # returns None while subprocess is running
-        retcode = proc.poll()
-        line = proc.stdout.readline()
+# def _run_process(proc):
+#     """ helper for cmd """
+#     while True:
+#         # returns None while subprocess is running
+#         retcode = proc.poll()
+#         line = proc.stdout.readline()
+#         yield line
+#         if retcode is not None:
+#             # The program has a return code, so its done executing.
+#             # Grab any remaining data in stdout
+#             for line in proc.stdout.readlines():
+#                 yield line
+#             raise StopIteration('process finished')
+
+
+def _textio_iterlines(stream):
+    """
+    Iterates over lines in a TextIO stream until an EOF is encountered.
+    This is the iterator version of stream.readlines()
+    """
+    line = stream.readline()
+    while line != '':
         yield line
-        if retcode is not None:
-            # The program has a return code, so its done executing.
-            # Grab any remaining data in stdout
-            for line in proc.stdout.readlines():
-                yield line
-            raise StopIteration('process finished')
+        line = stream.readline()
+
+
+def _proc_iteroutput(proc):
+    """
+    Iterates over output from a process line by line
+
+    Yields:
+        tuple[(str, str)]: oline, eline: stdout and stderr line
+    """
+    # Read output while the external program is running
+    import select
+    while proc.poll() is None:
+        reads = [proc.stdout.fileno(), proc.stderr.fileno()]
+        ret = select.select(reads, [], [])
+        oline = eline = None
+        for fd in ret[0]:
+            if fd == proc.stdout.fileno():
+                oline = proc.stdout.readline()
+            if fd == proc.stderr.fileno():
+                eline = proc.stderr.readline()
+        yield oline, eline
+
+    # Grab any remaining data in stdout and stderr after the process finishes
+    oline_iter = _textio_iterlines(proc.stdout)
+    eline_iter = _textio_iterlines(proc.stderr)
+    for oline, eline in it.zip_longest(oline_iter, eline_iter):
+        yield oline, eline
+
+
+def _proc_tee_output(proc, stdout, stderr):
+    """
+    Simultaniously reports and captures stdout and stderr from a process
+
+    subprocess must be created using (stdout=subprocess.PIPE,
+    stderr=subprocess.PIPE)
+    """
+    logged_out = []
+    logged_err = []
+    for oline, eline in _proc_iteroutput(proc):
+        if oline:
+            stdout.write(oline)
+            stdout.flush()
+            logged_out.append(oline)
+        if eline:
+            stderr.write(eline)
+            stderr.flush()
+            logged_err.append(eline)
+    return logged_out, logged_err
 
 
 def cmd(command, shell=False, detatch=False, verbose=0, verbout=None):
@@ -357,29 +417,24 @@ def cmd(command, shell=False, detatch=False, verbose=0, verbout=None):
             args = shlex.split(command, posix=not WIN32)
     # Create a new process to execute the command
     proc = subprocess.Popen(args, stdout=subprocess.PIPE,
-                            stderr=subprocess.STDOUT, shell=shell,
+                            stderr=subprocess.PIPE, shell=shell,
                             universal_newlines=True)
     if detatch:
         info = {'proc': proc}
         if verbose >= 2:  # nocover
             print('...detatching')
     else:
-        write_fn = sys.stdout.write
-        flush_fn = sys.stdout.flush
-        logged_out = []
-        for line in _run_process(proc):
-            #line_ = line if six.PY2 else line.decode('utf-8')
-            line_ = line if PY2 else line
-            if len(line_) > 0:
-                if verbout:  # nocover
-                    write_fn(line_)
-                    flush_fn()
-                logged_out.append(line)
+        logged_out, logged_err = _proc_tee_output(proc, sys.stdout, sys.stderr)
+
         try:
             out = ''.join(logged_out)
         except UnicodeDecodeError:  # nocover
             out = '\n'.join(_.decode('utf-8') for _ in logged_out)
-        (out_, err) = proc.communicate()
+        try:
+            err = ''.join(logged_err)
+        except UnicodeDecodeError:  # nocover
+            err = '\n'.join(_.decode('utf-8') for _ in logged_err)
+        (out_, err_) = proc.communicate()
         ret = proc.wait()
         info = {
             'out': out,

@@ -36,8 +36,6 @@ def parse_src_want(docsrc):
         >>> blocks = dict(docscrape_google.split_google_docblocks(docstr))
         >>> docsrc = blocks['Example']
         >>> src, want = parse_src_want(docsrc)
-        >>> 'I want to see this str'
-        'I want to see this str'
 
     Example:
         >>> from ubelt.util_test import *  # NOQA
@@ -53,8 +51,6 @@ def parse_src_want(docsrc):
         Intermediate want
         >>> docsrc = blocks['Example']
         >>> src, want = parse_src_want(docsrc)
-        >>> 'I want to see this str'
-        'I want to see this str'
     """
     from ubelt.meta import static_analysis as static
 
@@ -143,35 +139,42 @@ class _AbstractTest(util_mixins.NiceRepr):
             sys.stdout.write('.')
             sys.stdout.flush()
 
-    def report_failure(self, cap, verbose, ex):  # nocover
+    def repr_failure(self, verbose=1):
+        # TODO: print out nice line number
+        lines = []
         if verbose > 0:
-            # TODO: print out nice line number
-            print('')
-            print('report failure')
-            print(self.cmdline)
-            print(self.format_src())
-        # import utool
-        # utool.embed()
-        print('* FAILURE: {}, {}'.format(self.callname, type(ex)))
-        print(cap.text)
+            lines += [
+                '',
+                'report failure',
+                self.cmdline,
+                self.format_src(),
+            ]
+        lines += [
+            '* FAILURE: {}, {}'.format(self.callname, type(self.ex)),
+            self.cap.text,
+        ]
         # TODO: remove appropriate amount of traceback
         # exc_type, exc_value, exc_traceback = sys.exc_info()
         # exc_traceback = exc_traceback.tb_next
         # six.reraise(exc_type, exc_value, exc_traceback)
+        return '\n'.join(lines)
 
-    def post_run(self, cap, verbose, failed):  # nocover
-        if not failed and verbose >= 1:
-            if cap.text is not None:  # nocover
-                assert isinstance(cap.text, six.text_type), 'do not use ascii'
+    def report_failure(self, verbose):  # nocover
+        self.repr_failure(verbose=verbose)
+
+    def post_run(self, verbose):  # nocover
+        if self.ex is None and verbose >= 1:
+            if self.cap.text is not None:  # nocover
+                assert isinstance(self.cap.text, six.text_type), 'do not use ascii'
             try:
-                print(cap.text)
+                print(self.cap.text)
             except UnicodeEncodeError:  # nocover
                 print('Weird travis bug')
-                print('type(cap.text) = %r' % (type(cap.text),))
-                print('cap.text = %r' % (cap.text,))
+                print('type(cap.text) = %r' % (type(self.cap.text),))
+                print('cap.text = %r' % (self.cap.text,))
             print('* SUCCESS: {}'.format(self.callname))
         summary = {
-            'passed': not failed
+            'passed': self.ex is None
         }
         return summary
 
@@ -185,6 +188,8 @@ class UnitTest(_AbstractTest):
         self.callname = calldef.callname
         self._src = None
         self._want = None
+        self.ex = None
+        self.cap = None
 
     def format_src(self, linenums=True, colored=True):
         """
@@ -216,7 +221,6 @@ class UnitTest(_AbstractTest):
         """
         if verbose is None:
             verbose = 2
-        failed = False
         self.pre_run(verbose)
         # Prepare for actual test run
         test_locals = {}
@@ -227,21 +231,21 @@ class UnitTest(_AbstractTest):
             {callname}()
             ''').format(modname=self.modname, callname=self.callname)
         code = compile(src, '<string>', 'exec')
-        cap = util_str.CaptureStdout(enabled=verbose <= 1)
+        self.cap = util_str.CaptureStdout(enabled=verbose <= 1)
 
         try:
-            with cap:
+            with self.cap:
                 exec(code, test_locals)
         # Handle anything that could go wrong
         except ExitTestException:  # nocover
             if verbose > 0:
                 print('Test gracefully exists')
         except Exception as ex:  # nocover
-            failed = True
-            self.report_failure(cap, verbose, ex)
+            self.ex = ex
+            self.report_failure(verbose)
             raise
 
-        return self.post_run(cap, verbose, failed)
+        return self.post_run(verbose)
 
 
 class DocTest(_AbstractTest):
@@ -264,9 +268,13 @@ class DocTest(_AbstractTest):
         self.modname = static.modpath_to_modname(modpath)
         self.callname = callname
         self.block = block
+        self.lineno = 0  # TODO
         self.num = num
         self._src = None
         self._want = None
+        self.ex = None
+        self.cap = None
+        self.globs = {}
 
     @property
     def src(self):
@@ -335,25 +343,24 @@ class DocTest(_AbstractTest):
         if verbose is None:
             verbose = 2
         self._parse()
-        failed = False
         self.pre_run(verbose)
         # Prepare for actual test run
-        test_locals = {}
+        test_globals = self.globs
+        self.cap = util_str.CaptureStdout(enabled=verbose <= 1)
         code = compile(self.src, '<string>', 'exec')
-        cap = util_str.CaptureStdout(enabled=verbose <= 1)
         try:
-            with cap:
-                exec(code, test_locals)
+            with self.cap:
+                exec(code, test_globals)
         # Handle anything that could go wrong
         except ExitTestException:  # nocover
             if verbose > 0:
                 print('Test gracefully exists')
         except Exception as ex:  # nocover
-            failed = True
-            self.report_failure(cap, verbose, ex)
+            self.ex = ex
+            self.report_failure(verbose)
             raise
 
-        return self.post_run(cap, verbose, failed)
+        return self.post_run(verbose)
 
 
 def parse_docstr_examples(docstr, callname=None, modpath=None):
@@ -571,10 +578,10 @@ class CoverageContext(object):  # nocover
             self.stop()
 
 
-class TestHarness(object):  # nocover
+class Harness(object):  # nocover
     """
     Main entry point for general testing
-    run via: `TestHarness(<pkgname>).run('all')`
+    run via: `Harness(<pkgname>).run('all')`
     """
     def __init__(self, package_name, doc=True, unit=True, verbose=None):
         self.package_name = package_name
@@ -694,7 +701,7 @@ def doctest_package(package_name=None, command=None, argv=None,
         else:
             command = None
 
-    tester = TestHarness(package_name, doc=True, unit=False, verbose=verbose)
+    tester = Harness(package_name, doc=True, unit=False, verbose=verbose)
     result = tester.run(command)
     return result
 

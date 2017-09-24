@@ -173,9 +173,9 @@ def _covert_to_hashable(data):
         >>> from ubelt.util_hash import *  # NOQA
         >>> from ubelt.util_hash import _covert_to_hashable  # NOQA
         >>> import ubelt as ub
-        >>> _covert_to_hashable('string') == (b'', b'string')
-        >>> _covert_to_hashable(1) == (b'', b'\x00\x00\x00\x01')
-        >>> _covert_to_hashable(1.0) == (b'', b'1.0')
+        >>> assert _covert_to_hashable('string') == (b'', b'string')
+        >>> assert _covert_to_hashable(1) == (b'', b'\x00\x00\x00\x01')
+        >>> assert _covert_to_hashable(1.0) == (b'', b'1.0')
     """
     if isinstance(data, six.binary_type):
         hashable = data
