@@ -253,6 +253,7 @@ class DocTest(_AbstractTest):
     Holds information necessary to execute and verify a doctest
 
     Example:
+        >>> # pytest.skip
         >>> from ubelt.util_test import *  # NOQA
         >>> package_name = 'ubelt'
         >>> testables = parse_doctestables(package_name)
@@ -310,6 +311,7 @@ class DocTest(_AbstractTest):
         Adds prefix and line numbers to a doctest
 
         Example:
+            >>> # pytest.skip
             >>> from ubelt.util_test import *  # NOQA
             >>> package_name = 'ubelt'
             >>> testables = parse_doctestables(package_name)
@@ -422,6 +424,7 @@ def parse_doctestables(package_name, exclude=[], strict=False):
         python -m ubelt.util_test parse_doctestables
 
     Example:
+        >>> # pytest.skip
         >>> from ubelt.util_test import *  # NOQA
         >>> package_name = 'ubelt'
         >>> testables = list(parse_doctestables(package_name))
@@ -677,6 +680,7 @@ def doctest_package(package_name=None, command=None, argv=None,
         python -m ubelt.util_test doctest_package
 
     Example:
+        >>> # pytest.skip
         >>> from ubelt.util_test import *  # NOQA
         >>> package_name = 'ubelt.util_test'
         >>> result = doctest_package(package_name, 'list', argv=[''])
