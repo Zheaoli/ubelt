@@ -345,6 +345,10 @@ def cmd(command, shell=False, detatch=False, verbose=0, verbout=None):
 
     CommandLine:
         python -m ubelt.util_platform cmd
+        python -c "import ubelt as ub; ub.cmd('ping localhost -c 2', verbose=2)"
+
+    References:
+        https://stackoverflow.com/questions/11495783/redirect-subprocess-stderr-to-stdout
 
     Doctest:
         >>> import ubelt as ub
@@ -415,6 +419,7 @@ def cmd(command, shell=False, detatch=False, verbose=0, verbout=None):
             args = command
         else:
             args = shlex.split(command, posix=not WIN32)
+
     # Create a new process to execute the command
     proc = subprocess.Popen(args, stdout=subprocess.PIPE,
                             stderr=subprocess.PIPE, shell=shell,
