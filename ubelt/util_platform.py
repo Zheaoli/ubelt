@@ -303,7 +303,7 @@ def _proc_iteroutput(proc):
         yield oline, eline
 
 
-def _proc_tee_output(proc, stdout, stderr):
+def _proc_tee_output(proc, stdout=None, stderr=None):
     """
     Simultaniously reports and captures stdout and stderr from a process
 
@@ -314,12 +314,14 @@ def _proc_tee_output(proc, stdout, stderr):
     logged_err = []
     for oline, eline in _proc_iteroutput(proc):
         if oline:
-            stdout.write(oline)
-            stdout.flush()
+            if stdout:
+                stdout.write(oline)
+                stdout.flush()
             logged_out.append(oline)
         if eline:
-            stderr.write(eline)
-            stderr.flush()
+            if stderr:
+                stderr.write(eline)
+                stderr.flush()
             logged_err.append(eline)
     return logged_out, logged_err
 
@@ -429,7 +431,11 @@ def cmd(command, shell=False, detatch=False, verbose=0, verbout=None):
         if verbose >= 2:  # nocover
             print('...detatching')
     else:
-        logged_out, logged_err = _proc_tee_output(proc, sys.stdout, sys.stderr)
+        if verbout:
+            stdout, stderr = sys.stdout, sys.stderr
+        else:
+            stdout, stderr = None, None
+        logged_out, logged_err = _proc_tee_output(proc, stdout, stderr)
 
         try:
             out = ''.join(logged_out)
