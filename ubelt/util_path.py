@@ -30,7 +30,7 @@ def augpath(path, suffix='', prefix='', ext=None):
     if ext is None:
         ext = orig_ext
     # Augment and recombine into new path
-    new_fname = ''.join((prefix, fname_noext, suffix, orig_ext))
+    new_fname = ''.join((prefix, fname_noext, suffix, ext))
     newpath = join(dpath, new_fname)
     return newpath
 
