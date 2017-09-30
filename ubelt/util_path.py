@@ -5,8 +5,8 @@ from os.path import splitext, split, join
 
 def augpath(path, suffix='', prefix='', ext=None):
     """
-    Augments a filename with a suffix and/or a prefix while maintaining the
-    extension.
+    Augments a filename with a suffix and/or a prefix while maintaining or
+    modifying the extension.
 
     Args:
         path (str):
