@@ -70,7 +70,7 @@ def test_cmd_stderr():
     assert result['err'].strip() == 'hello stderr'
 
 
-def test_cmd_multiline_stdout():
+def test_cmd_multiline_stdout_shell_false():
     import threading
     # check which threads currently exist (ideally 1)
     existing_threads = list(threading.enumerate())
@@ -78,6 +78,30 @@ def test_cmd_multiline_stdout():
 
     command = 'python -c "for i in range(100): print(str(i))"'
     result = ub.cmd(command, verbose=2)
+
+    print('result = {!r}'.format(result))
+    print(result['ret'])
+    print(result['out'])
+    print(result['err'])
+    print(result['out_'])
+    print(result['err_'])
+
+    assert result['out'] == '\n'.join(list(map(str, range(100)))) + '\n'
+
+    after_threads = list(threading.enumerate())
+    print('after_threads = {!r}'.format(after_threads))
+    assert len(existing_threads) <= len(after_threads), (
+        'we should be cleaning up our threads')
+
+
+def test_cmd_multiline_stdout_shell_true():
+    import threading
+    # check which threads currently exist (ideally 1)
+    existing_threads = list(threading.enumerate())
+    print('existing_threads = {!r}'.format(existing_threads))
+
+    command = 'python -c "for i in range(100): print(str(i))"'
+    result = ub.cmd(command, verbose=2, shell=True)
 
     print('result = {!r}'.format(result))
     print(result['ret'])
@@ -108,9 +132,28 @@ def test_sub_python_simple_stdout_shell_true():
 @pytest.mark.skip('doesnt work')
 def test_sub_python_simple_stdout_shell_false():
     import subprocess
-    proc = subprocess.Popen(['python', '-c', '"print(1234)"'],
+    proc = subprocess.Popen(['python', '-u', '-c', '"print(1234)"'],
                             stdout=subprocess.PIPE, stderr=subprocess.PIPE,
                             shell=False, universal_newlines=True)
+    import sys
+    out = proc.stdout.read()
+    err = proc.stderr.read()
+    # sys.stdout.flush()
+    # proc.stdout.flush()
+    print('err = {!r}'.format(err))
+    print('out = {!r}'.format(out))
+    out, err = proc.communicate()
+
+    # import ubelt as ub
+    # args = shlex.split(command, posix=not ub.WIN32)
+    # command = 'python -c "for i in range(100): print(str(i))"'
+    import shlex
+    import subprocess
+    command = '''python -c "import sys; print('1234'); sys.stdout.flush()"'''
+    args = shlex.split(command, posix=True)
+    proc = subprocess.Popen(args, stdout=subprocess.PIPE,
+                            stderr=subprocess.PIPE, shell=False,
+                            universal_newlines=True)
     out, err = proc.communicate()
     print('err = {!r}'.format(err))
     print('out = {!r}'.format(out))
