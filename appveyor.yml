@@ -1,5 +1,8 @@
 environment:
 
+  # Workaround for issue with ub.writeto doctest
+  PYTHONIOENCODING: "UTF-8"
+
   matrix:
 
     # For Python versions available on Appveyor, see

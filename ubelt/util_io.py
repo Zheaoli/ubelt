@@ -15,8 +15,7 @@ def writeto(fpath, to_write, aslines=False, mode='w', verbose=None):
         to_write (str): text to write (must be unicode text)
         aslines (bool): if True to_write is assumed to be a list of lines
         verbose (bool): verbosity flag
-        mode (unicode): (default = u'w')
-        n (int):  (default = 2)
+        mode (str): (default = 'w')
 
     CommandLine:
         python -m ubelt.util_io writeto --verbose
@@ -81,7 +80,7 @@ def readfrom(fpath, aslines=False, errors='replace', verbose=None):
         y.encode('utf8') == x
     """
     if verbose:
-        print('[util_io] * Reading text file: %r ' % (fpath,))
+        print('Reading text file: %r ' % (fpath,))
     if not exists(fpath):
         raise IOError('File %r does not exist' % (fpath,))
     with open(fpath, 'rb') as file_:
