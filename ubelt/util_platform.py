@@ -493,16 +493,16 @@ def cmd(command, shell=False, detatch=False, verbose=0, verbout=None):
         >>> assert info['out'].strip() == 'str noshell'
 
     Doctest:
-        >>> info = cmd(('echo', 'tuple noshell'), verbose=0)
-        >>> assert info['out'].strip() == 'tuple noshell'
+        >>> info = cmd(('echo', 'args noshell'), verbose=0)
+        >>> assert info['out'].strip() == 'args noshell'
 
     Doctest:
-        >>> info = cmd('echo "str\n\nshell"', verbose=0, shell=True)
-        >>> assert info['out'].strip() == 'str\n\nshell'
+        >>> info = cmd('echo "str shell"', verbose=0, shell=True)
+        >>> assert info['out'].strip() == 'str shell'
 
     Doctest:
-        >>> info = cmd(('echo', 'tuple shell'), verbose=0, shell=True)
-        >>> assert info['out'].strip() == 'tuple shell'
+        >>> info = cmd(('echo', 'args shell'), verbose=0, shell=True)
+        >>> assert info['out'].strip() == 'args shell'
     """
     if verbout is None:
         verbout = verbose >= 1
