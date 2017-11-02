@@ -94,6 +94,16 @@ def test_cmd_multiline_stdout():
         'we should be cleaning up our threads')
 
 
+def test_sub_python_simple_stdout():
+    import subprocess
+    proc = subprocess.Popen('python -c "print(1234)"', stdout=subprocess.PIPE,
+                            stderr=subprocess.PIPE, shell=True)
+    out, err = proc.communicate()
+    print('err = {!r}'.format(err))
+    print('out = {!r}'.format(out))
+    assert out.decode('utf8') == '1234\n'
+
+
 @pytest.mark.skipif(sys.platform == 'win32',
                     reason="does not run on windows")
 def test_cmd_interleaved_streams_sh():
