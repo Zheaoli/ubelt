@@ -303,21 +303,30 @@ def _textio_iterlines(stream):
         line = stream.readline()
 
 
-def _proc_async_iter_stream(proc, stream, buffersize=10):
+def _proc_async_iter_stream(proc, stream, buffersize=100):
     """
     Reads output from a process in a separate thread
     """
     def enqueue_output(proc, stream, stream_queue):
+        import threading
+        existing_threads = list(threading.enumerate())
+        print('existing_threads = {!r}'.format(existing_threads))
         while proc.poll() is None:
+            print(proc.poll())
             line = stream.readline()
-            # print('ENQUEUE LIVE {!r} {!r}'.format(stream, line))
+            print('ENQUEUE LIVE {!r} {!r}'.format(stream, line))
+            print('putting line2 = {!r}'.format(line))
             stream_queue.put(line)
+            print('put line1 = {!r}'.format(line))
+            print(proc.poll())
 
         for line in _textio_iterlines(stream):
-            # print('ENQUEUE FINAL {!r} {!r}'.format(stream, line))
+            print('ENQUEUE FINAL {!r} {!r}'.format(stream, line))
+            print('putting line2 = {!r}'.format(line))
             stream_queue.put(line)
+            print('put line2 = {!r}'.format(line))
 
-        # print("STREAM IS DONE {!r}".format(stream))
+        print("STREAM IS DONE {!r}".format(stream))
         stream_queue.put(None)  # signal that the stream is finished
         # stream.close()
     stream_queue = queue.Queue(maxsize=buffersize)
@@ -339,6 +348,7 @@ def _proc_iteroutput_thread(proc):
     """
 
     # Create threads that read stdout / stderr and queue up the output
+    print('proc = {!r}'.format(proc))
     stdout_queue = _proc_async_iter_stream(proc, proc.stdout)
     stderr_queue = _proc_async_iter_stream(proc, proc.stderr)
 
@@ -347,6 +357,8 @@ def _proc_iteroutput_thread(proc):
 
     # read from the output asychronously until
     while stdout_live or stderr_live:
+        print('stdout_live = {!r}'.format(stdout_live))
+        print('stderr_live = {!r}'.format(stderr_live))
         if stdout_live:
             try:
                 oline = stdout_queue.get_nowait()
@@ -444,23 +456,35 @@ def cmd(command, shell=False, detatch=False, verbose=0, verbout=None):
         https://stackoverflow.com/questions/11495783/redirect-subprocess-stderr-to-stdout
         https://stackoverflow.com/questions/7729336/how-can-i-print-and-display-subprocess-stdout-and-stderr-output-without-distorti
 
+        https://stackoverflow.com/questions/10406532/python-subprocess-output-on-windows
+
+    Doctest:
+        >>> # ----
+        >>> verbose = 2
+        >>> info = cmd('echo str noshell', verbose=verbose)
+        >>> assert info['out'].strip() == 'str noshell'
+
+    Doctest:
+        >>> # ----
+        >>> verbose = 0
+        >>> info = cmd(('echo', 'tuple noshell'), verbose=verbose)
+        >>> assert info['out'].strip() == 'tuple noshell'
+
+    Doctest:
+        >>> # ----
+        >>> verbose = 0
+        >>> info = cmd('echo "str\n\nshell"', verbose=verbose, shell=True)
+        >>> assert info['out'].strip() == 'str\n\nshell'
+
+    Doctest:
+        >>> # ----
+        >>> verbose = 0
+        >>> info = cmd(('echo', 'tuple shell'), verbose=verbose, shell=True)
+        >>> assert info['out'].strip() == 'tuple shell'
+
     Doctest:
         >>> import ubelt as ub
         >>> from os.path import join, exists
-        >>> verbose = 0
-        >>> # ----
-        >>> info = ub.cmd('echo str noshell', verbose=verbose)
-        >>> assert info['out'].strip() == 'str noshell'
-        >>> # ----
-        >>> info = ub.cmd(('echo', 'tuple noshell'), verbose=verbose)
-        >>> assert info['out'].strip() == 'tuple noshell'
-        >>> # ----
-        >>> info = ub.cmd('echo "str\n\nshell"', verbose=verbose, shell=True)
-        >>> assert info['out'].strip() == 'str\n\nshell'
-        >>> # ----
-        >>> info = ub.cmd(('echo', 'tuple shell'), verbose=verbose, shell=True)
-        >>> assert info['out'].strip() == 'tuple shell'
-        >>> # ----
         >>> fpath1 = join(ub.get_app_cache_dir('ubelt'), 'cmdout1.txt')
         >>> fpath2 = join(ub.get_app_cache_dir('ubelt'), 'cmdout2.txt')
         >>> ub.delete(fpath1)
@@ -515,7 +539,7 @@ def cmd(command, shell=False, detatch=False, verbose=0, verbout=None):
     # Create a new process to execute the command
     proc = subprocess.Popen(args, stdout=subprocess.PIPE,
                             stderr=subprocess.PIPE, shell=shell,
-                            universal_newlines=True)
+                            bufsize=0, universal_newlines=True)
     if detatch:
         info = {'proc': proc}
         if verbose >= 2:  # nocover
@@ -523,8 +547,12 @@ def cmd(command, shell=False, detatch=False, verbose=0, verbout=None):
     else:
         if verbout:
             stdout, stderr = sys.stdout, sys.stderr
+            # import tempfile
+            # stderr = tempfile.NamedTemporaryFile()
+            # stdout = tempfile.NamedTemporaryFile()
         else:
             stdout, stderr = None, None
+
         logged_out, logged_err = _proc_tee_output(proc, stdout, stderr)
 
         try:
@@ -537,6 +565,11 @@ def cmd(command, shell=False, detatch=False, verbose=0, verbout=None):
             err = '\n'.join(_.decode('utf-8') for _ in logged_err)
         (out_, err_) = proc.communicate()
         ret = proc.wait()
+
+        # if stdout or stderr:
+        #     stdout.close()
+        #     stderr.close()
+
         info = {
             'out': out,
             'err': err,
