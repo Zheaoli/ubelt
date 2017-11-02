@@ -78,6 +78,11 @@ def test_cmd_multiline_stdout():
 
     command = 'python -c "for i in range(100): print(str(i))"'
     result = ub.cmd(command, verbose=2)
+
+    print(result['ret'])
+    print(result['out'])
+    print(result['err'])
+
     assert result['out'] == '\n'.join(list(map(str, range(100)))) + '\n'
 
     after_threads = list(threading.enumerate())

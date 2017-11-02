@@ -4,9 +4,14 @@ from os.path import normpath, expanduser, join, exists, dirname
 import os
 import sys
 import six
-# import itertools as it
+import shlex
+import subprocess
+import pipes
+import getpass
+import platform
 from six.moves import zip_longest
 from threading  import Thread
+# import itertools as it
 if six.PY2:
     import Queue as queue
 else:
@@ -499,9 +504,6 @@ def cmd(command, shell=False, detatch=False, verbose=0, verbout=None):
         >>> info = cmd(('echo', 'tuple shell'), verbose=0, shell=True)
         >>> assert info['out'].strip() == 'tuple shell'
     """
-    import shlex
-    import subprocess
-    import pipes
     if verbout is None:
         verbout = verbose >= 1
     if verbose >= 2:  # nocover
@@ -511,8 +513,6 @@ def cmd(command, shell=False, detatch=False, verbose=0, verbout=None):
             print('Command:')
             print(command)
         else:
-            import getpass
-            import platform
             compname = platform.node()
             username = getpass.getuser()
             cwd = compressuser(os.getcwd())
@@ -538,8 +538,7 @@ def cmd(command, shell=False, detatch=False, verbose=0, verbout=None):
     # Create a new process to execute the command
     proc = subprocess.Popen(args, stdout=subprocess.PIPE,
                             stderr=subprocess.PIPE, shell=shell,
-                            # bufsize=0,
-                            universal_newlines=True)
+                            bufsize=1, universal_newlines=True)
     if detatch:
         info = {'proc': proc}
         if verbose >= 2:  # nocover
@@ -547,9 +546,6 @@ def cmd(command, shell=False, detatch=False, verbose=0, verbout=None):
     else:
         if verbout:
             stdout, stderr = sys.stdout, sys.stderr
-            # import tempfile
-            # stderr = tempfile.NamedTemporaryFile()
-            # stdout = tempfile.NamedTemporaryFile()
         else:
             stdout, stderr = None, None
 
@@ -563,17 +559,17 @@ def cmd(command, shell=False, detatch=False, verbose=0, verbout=None):
             err = ''.join(logged_err)
         except UnicodeDecodeError:  # nocover
             err = '\n'.join(_.decode('utf-8') for _ in logged_err)
+
+        # The remaining out_ and err_ should already be logged
         (out_, err_) = proc.communicate()
         ret = proc.wait()
-
-        # if stdout or stderr:
-        #     stdout.close()
-        #     stderr.close()
 
         info = {
             'out': out,
             'err': err,
             'ret': ret,
+            'out_': out_,
+            'err_': err_,
         }
         if verbose >= 3:  # nocover
             print('L___ END CMD ___')  # TODO: use nicer unicode chars

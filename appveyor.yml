@@ -1,6 +1,8 @@
 environment:
 
   # Workaround for issue with ub.writeto doctest
+  # See: https://www.reddit.com/r/learnpython/comments/350c8c/unicode_python_3_and_the_windows_console/
+  # for other potential workarounds.
   PYTHONIOENCODING: "UTF-8"
 
   matrix:
