@@ -79,9 +79,12 @@ def test_cmd_multiline_stdout():
     command = 'python -c "for i in range(100): print(str(i))"'
     result = ub.cmd(command, verbose=2)
 
+    print('result = {!r}'.format(result))
     print(result['ret'])
     print(result['out'])
     print(result['err'])
+    print(result['out_'])
+    print(result['err_'])
 
     assert result['out'] == '\n'.join(list(map(str, range(100)))) + '\n'
 
