@@ -1,7 +1,48 @@
 import ubelt as ub
 import pytest
 import sys
-from os.path import expanduser, basename
+from os.path import expanduser, basename, join, exists
+
+
+# def test_cmd_with_echo_append():
+#     import ubelt as ub
+#     from os.path import join, exists
+#     fpath1 = join(ub.get_app_cache_dir('ubelt'), 'cmdout1.txt')
+#     fpath2 = join(ub.get_app_cache_dir('ubelt'), 'cmdout2.txt')
+#     ub.delete(fpath1)
+#     ub.delete(fpath2)
+#     info1 = ub.cmd(('touch', fpath1), detatch=True)
+#     info2 = ub.cmd('echo writing2 > ' + fpath2, shell=True, detatch=True)
+#     while not exists(fpath1):
+#         pass
+#     while not exists(fpath2):
+#         pass
+#     assert ub.readfrom(fpath1) == ''
+#     assert ub.readfrom(fpath2).strip() == 'writing2'
+#     info1['proc'].wait()
+#     info2['proc'].wait()
+
+
+def test_detatched_cmd_shell_true():
+    fpath2 = join(ub.get_app_cache_dir('ubelt'), 'cmdout2.txt')
+    ub.delete(fpath2)
+    info2 = ub.cmd('echo writing2 > ' + fpath2, shell=True, detatch=True)
+    while not exists(fpath2):
+        pass
+    assert ub.readfrom(fpath2).strip() == 'writing2'
+    info2['proc'].communicate()
+    info2['proc'].wait()
+
+
+def test_detatched_cmd_shell_false():
+    fpath1 = join(ub.get_app_cache_dir('ubelt'), 'cmdout1.txt')
+    ub.delete(fpath1)
+    info1 = ub.cmd(('touch', fpath1), shell=False, detatch=True)
+    while not exists(fpath1):
+        pass
+    assert ub.readfrom(fpath1) == ''
+    info1['proc'].communicate()
+    info1['proc'].wait()
 
 
 def test_compressuser_without_home():

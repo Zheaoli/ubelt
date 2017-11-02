@@ -303,37 +303,37 @@ def _textio_iterlines(stream):
         line = stream.readline()
 
 
-# def _proc_iteroutput_select(proc):  # nocover
-#     """
-#     Iterates over output from a process line by line
+def _proc_iteroutput_select(proc):  # nocover
+    """
+    Iterates over output from a process line by line
 
-#     UNIX only. Use `_proc_iteroutput_thread` instead for a cross platform
-#     solution based on threads.
+    UNIX only. Use `_proc_iteroutput_thread` instead for a cross platform
+    solution based on threads.
 
-#     Yields:
-#         tuple[(str, str)]: oline, eline: stdout and stderr line
-#     """
-#     # Read output while the external program is running
-#     import select
-#     while proc.poll() is None:
-#         reads = [proc.stdout.fileno(), proc.stderr.fileno()]
-#         ret = select.select(reads, [], [])
-#         oline = eline = None
-#         for fd in ret[0]:
-#             if fd == proc.stdout.fileno():
-#                 oline = proc.stdout.readline()
-#             if fd == proc.stderr.fileno():
-#                 eline = proc.stderr.readline()
-#         yield oline, eline
+    Yields:
+        tuple[(str, str)]: oline, eline: stdout and stderr line
+    """
+    # Read output while the external program is running
+    import select
+    while proc.poll() is None:
+        reads = [proc.stdout.fileno(), proc.stderr.fileno()]
+        ret = select.select(reads, [], [])
+        oline = eline = None
+        for fd in ret[0]:
+            if fd == proc.stdout.fileno():
+                oline = proc.stdout.readline()
+            if fd == proc.stderr.fileno():
+                eline = proc.stderr.readline()
+        yield oline, eline
 
-#     # Grab any remaining data in stdout and stderr after the process finishes
-#     oline_iter = _textio_iterlines(proc.stdout)
-#     eline_iter = _textio_iterlines(proc.stderr)
-#     for oline, eline in zip_longest(oline_iter, eline_iter):
-#         yield oline, eline
+    # Grab any remaining data in stdout and stderr after the process finishes
+    oline_iter = _textio_iterlines(proc.stdout)
+    eline_iter = _textio_iterlines(proc.stderr)
+    for oline, eline in zip_longest(oline_iter, eline_iter):
+        yield oline, eline
 
 
-def _proc_async_iter_stream(proc, stream, buffersize=100):
+def _proc_async_iter_stream(proc, stream, buffersize=2):
     """
     Reads output from a process in a separate thread
     """
@@ -360,10 +360,10 @@ def _proc_async_iter_stream(proc, stream, buffersize=100):
         stream_queue.put(None)  # signal that the stream is finished
         # stream.close()
     stream_queue = queue.Queue(maxsize=buffersize)
-    _thread = Thread(target=enqueue_output, args=(proc, stream, stream_queue))
-    _thread.daemon = True  # thread dies with the program
-    _thread.start()
-    return stream_queue
+    stream_thread = Thread(target=enqueue_output, args=(proc, stream, stream_queue))
+    stream_thread.daemon = True  # thread dies with the program
+    stream_thread.start()
+    return stream_queue, stream_thread
 
 
 def _proc_iteroutput_thread(proc):
@@ -379,14 +379,16 @@ def _proc_iteroutput_thread(proc):
 
     # Create threads that read stdout / stderr and queue up the output
     # print('proc = {!r}'.format(proc))
-    stdout_queue = _proc_async_iter_stream(proc, proc.stdout)
-    stderr_queue = _proc_async_iter_stream(proc, proc.stderr)
+    stdout_queue, o_thread = _proc_async_iter_stream(proc, proc.stdout)
+    stderr_queue, e_thread = _proc_async_iter_stream(proc, proc.stderr)
 
     stdout_live = True
     stderr_live = True
 
     # read from the output asychronously until
     while stdout_live or stderr_live:
+        # print('o_thread = {!r}'.format(o_thread))
+        # print('e_thread = {!r}'.format(e_thread))
         # print('stdout_live = {!r}'.format(stdout_live))
         # print('stderr_live = {!r}'.format(stderr_live))
         if stdout_live:
@@ -404,6 +406,15 @@ def _proc_iteroutput_thread(proc):
         if oline is not None or eline is not None:
             yield oline, eline
 
+    # NOTE: if tqdm is installed then threads in pytest will hang
+
+    # print('o_thread = {!r}'.format(o_thread))
+    # print('e_thread = {!r}'.format(e_thread))
+    o_thread.join()
+    e_thread.join()
+    # print('o_thread = {!r}'.format(o_thread))
+    # print('e_thread = {!r}'.format(e_thread))
+
 
 def _proc_tee_output(proc, stdout=None, stderr=None):
     """
@@ -415,7 +426,11 @@ def _proc_tee_output(proc, stdout=None, stderr=None):
     logged_out = []
     logged_err = []
     _proc_iteroutput = _proc_iteroutput_thread
+    # _proc_iteroutput = _proc_iteroutput_select
     for oline, eline in _proc_iteroutput(proc):
+        # print(proc.poll())
+        # print('eline = {!r}'.format(eline))
+        # print('oline = {!r}'.format(oline))
         if oline:
             if stdout:
                 stdout.write(oline)
@@ -426,12 +441,22 @@ def _proc_tee_output(proc, stdout=None, stderr=None):
                 stderr.write(eline)
                 stderr.flush()
             logged_err.append(eline)
+        # print('Looping')
     return logged_out, logged_err
 
 
 def cmd(command, shell=False, detatch=False, verbose=0, verbout=None):
     r"""
-    Trying to clean up cmd
+    Runs a command as a subprocess.
+
+    This function can capture and return stdout and stderr, write to the screen
+    as if it was run with `os.system`, both, or neither. It is also possible to
+    "detatch" and run the subproces silently in the background.
+
+    Notes:
+        The underlying subprocess is always constructed with `stdout=PIPE` and
+        `sterr=PIPE`. If detatch is True, it is important to call
+        `info['proc'].communicate()` before any call to `info['proc'].wait()`.
 
     Args:
         command (str): bash-like command string or tuple of executable and args
@@ -459,46 +484,20 @@ def cmd(command, shell=False, detatch=False, verbose=0, verbout=None):
         https://stackoverflow.com/questions/10406532/python-subprocess-output-on-windows
 
     Doctest:
-        >>> # ----
-        >>> verbose = 2
-        >>> info = cmd('echo str noshell', verbose=verbose)
+        >>> info = cmd('echo str noshell', verbose=0)
         >>> assert info['out'].strip() == 'str noshell'
 
     Doctest:
-        >>> # ----
-        >>> verbose = 0
-        >>> info = cmd(('echo', 'tuple noshell'), verbose=verbose)
+        >>> info = cmd(('echo', 'tuple noshell'), verbose=0)
         >>> assert info['out'].strip() == 'tuple noshell'
 
     Doctest:
-        >>> # ----
-        >>> verbose = 0
-        >>> info = cmd('echo "str\n\nshell"', verbose=verbose, shell=True)
+        >>> info = cmd('echo "str\n\nshell"', verbose=0, shell=True)
         >>> assert info['out'].strip() == 'str\n\nshell'
 
     Doctest:
-        >>> # ----
-        >>> verbose = 0
-        >>> info = cmd(('echo', 'tuple shell'), verbose=verbose, shell=True)
+        >>> info = cmd(('echo', 'tuple shell'), verbose=0, shell=True)
         >>> assert info['out'].strip() == 'tuple shell'
-
-    Doctest:
-        >>> import ubelt as ub
-        >>> from os.path import join, exists
-        >>> fpath1 = join(ub.get_app_cache_dir('ubelt'), 'cmdout1.txt')
-        >>> fpath2 = join(ub.get_app_cache_dir('ubelt'), 'cmdout2.txt')
-        >>> ub.delete(fpath1)
-        >>> ub.delete(fpath2)
-        >>> info1 = ub.cmd(('touch', fpath1), detatch=True)
-        >>> info2 = ub.cmd('echo writing2 > ' + fpath2, shell=True, detatch=True)
-        >>> while not exists(fpath1):
-        ...     pass
-        >>> while not exists(fpath2):
-        ...     pass
-        >>> assert ub.readfrom(fpath1) == ''
-        >>> assert ub.readfrom(fpath2).strip() == 'writing2'
-        >>> info1['proc'].wait()
-        >>> info2['proc'].wait()
     """
     import shlex
     import subprocess
@@ -539,7 +538,8 @@ def cmd(command, shell=False, detatch=False, verbose=0, verbout=None):
     # Create a new process to execute the command
     proc = subprocess.Popen(args, stdout=subprocess.PIPE,
                             stderr=subprocess.PIPE, shell=shell,
-                            bufsize=0, universal_newlines=True)
+                            # bufsize=0,
+                            universal_newlines=True)
     if detatch:
         info = {'proc': proc}
         if verbose >= 2:  # nocover

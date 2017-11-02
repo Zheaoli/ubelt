@@ -57,6 +57,8 @@ class CaptureStdout(object):
             finally:
                 self.cap_stdout.close()
                 sys.stdout = self.orig_stdout
+        else:
+            self.cap_stdout.close()
         if trace is not None:
             return False  # return a falsey value on error
 
