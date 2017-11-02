@@ -97,7 +97,8 @@ def test_cmd_multiline_stdout():
 def test_sub_python_simple_stdout_shell_true():
     import subprocess
     proc = subprocess.Popen('python -c "print(1234)"', stdout=subprocess.PIPE,
-                            stderr=subprocess.PIPE, shell=True)
+                            stderr=subprocess.PIPE, shell=True,
+                            universal_newlines=True)
     out, err = proc.communicate()
     print('err = {!r}'.format(err))
     print('out = {!r}'.format(out))
@@ -109,7 +110,7 @@ def test_sub_python_simple_stdout_shell_false():
     import subprocess
     proc = subprocess.Popen(['python', '-c', '"print(1234)"'],
                             stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-                            shell=False)
+                            shell=False, universal_newlines=True)
     out, err = proc.communicate()
     print('err = {!r}'.format(err))
     print('out = {!r}'.format(out))
@@ -120,18 +121,18 @@ def test_sub_echo_simple_stdout_shell_false():
     import subprocess
     proc = subprocess.Popen(['echo', '1234'],
                             stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-                            shell=False)
+                            shell=False, universal_newlines=True)
     out, err = proc.communicate()
     print('err = {!r}'.format(err))
     print('out = {!r}'.format(out))
-    assert out.decode('utf8') == '1234\n'
+    assert out.decode('utf8').strip() == '1234\n'
 
 
 def test_sub_echo_simple_stdout_shell_true():
     import subprocess
     proc = subprocess.Popen('echo 1234',
                             stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-                            shell=True)
+                            shell=True, universal_newlines=True)
     out, err = proc.communicate()
     print('err = {!r}'.format(err))
     print('out = {!r}'.format(out))
