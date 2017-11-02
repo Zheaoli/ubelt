@@ -119,45 +119,29 @@ def test_cmd_multiline_stdout_shell_true():
 
 
 def test_sub_python_simple_stdout_shell_true():
+    """
+    pytest ubelt/tests/test_platform.py -s --verbose -k test_sub
+    """
     import subprocess
-    proc = subprocess.Popen('python -c "print(1234)"', stdout=subprocess.PIPE,
+    command = 'python -c "print(1234)"'
+    proc = subprocess.Popen(command, stdout=subprocess.PIPE,
                             stderr=subprocess.PIPE, shell=True,
                             universal_newlines=True)
     out, err = proc.communicate()
     print('err = {!r}'.format(err))
     print('out = {!r}'.format(out))
-    assert out.decode('utf8') == '1234\n'
+    assert ub.ensure_unicode(out).strip() == ub.ensure_unicode('1234')
 
 
-@pytest.mark.skip('doesnt work')
 def test_sub_python_simple_stdout_shell_false():
     import subprocess
-    proc = subprocess.Popen(['python', '-u', '-c', '"print(1234)"'],
+    proc = subprocess.Popen(['python', '-c', 'print(1234)'],
                             stdout=subprocess.PIPE, stderr=subprocess.PIPE,
                             shell=False, universal_newlines=True)
-    import sys
-    out = proc.stdout.read()
-    err = proc.stderr.read()
-    # sys.stdout.flush()
-    # proc.stdout.flush()
-    print('err = {!r}'.format(err))
-    print('out = {!r}'.format(out))
-    out, err = proc.communicate()
-
-    # import ubelt as ub
-    # args = shlex.split(command, posix=not ub.WIN32)
-    # command = 'python -c "for i in range(100): print(str(i))"'
-    import shlex
-    import subprocess
-    command = '''python -c "import sys; print('1234'); sys.stdout.flush()"'''
-    args = shlex.split(command, posix=True)
-    proc = subprocess.Popen(args, stdout=subprocess.PIPE,
-                            stderr=subprocess.PIPE, shell=False,
-                            universal_newlines=True)
     out, err = proc.communicate()
     print('err = {!r}'.format(err))
     print('out = {!r}'.format(out))
-    assert out.decode('utf8') == '1234\n'
+    assert ub.ensure_unicode(out).strip() == ub.ensure_unicode('1234')
 
 
 def test_sub_echo_simple_stdout_shell_false():
@@ -168,7 +152,7 @@ def test_sub_echo_simple_stdout_shell_false():
     out, err = proc.communicate()
     print('err = {!r}'.format(err))
     print('out = {!r}'.format(out))
-    assert out.decode('utf8').strip() == '1234\n'
+    assert ub.ensure_unicode(out).strip() == ub.ensure_unicode('1234')
 
 
 def test_sub_echo_simple_stdout_shell_true():
@@ -179,11 +163,11 @@ def test_sub_echo_simple_stdout_shell_true():
     out, err = proc.communicate()
     print('err = {!r}'.format(err))
     print('out = {!r}'.format(out))
-    assert out.decode('utf8') == '1234\n'
+    assert ub.ensure_unicode(out).strip() == ub.ensure_unicode('1234')
 
 
 @pytest.mark.skipif(sys.platform == 'win32',
-                    reason="does not run on windows")
+                    reason="multiline script does not run on windows")
 def test_cmd_interleaved_streams_sh():
     """
     A test that ``Crosses the Streams''
@@ -206,7 +190,7 @@ def test_cmd_interleaved_streams_sh():
 
 
 @pytest.mark.skipif(sys.platform == 'win32',
-                    reason="does not run on windows")
+                    reason="multiline script does not run on windows")
 def test_cmd_interleaved_streams_py():
     # apparently multiline quotes dont work on win32
     py_script = ub.codeblock(
