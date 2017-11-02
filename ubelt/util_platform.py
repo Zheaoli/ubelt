@@ -533,7 +533,10 @@ def cmd(command, shell=False, detatch=False, verbose=0, verbout=None):
         if isinstance(command, (list, tuple)):
             args = command
         else:
-            args = shlex.split(command, posix=not WIN32)
+            # args = shlex.split(command, posix=not WIN32)
+            # NOTE: using posix=False fails on windows for the case:
+            # command = 'python -c "for i in range(5): print(i)"'
+            args = shlex.split(command, posix=True)
 
     # Create a new process to execute the command
     proc = subprocess.Popen(args, stdout=subprocess.PIPE,

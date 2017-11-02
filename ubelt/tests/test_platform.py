@@ -118,6 +118,22 @@ def test_cmd_multiline_stdout_shell_true():
         'we should be cleaning up our threads')
 
 
+def test_sub_python_simple_multiline_stdout_shell_false():
+    import subprocess
+    import shlex
+    command = 'python -c "for i in range(5): print(str(i))"'
+    # NOTE: using posix=False fails on windows for this case
+    # args = shlex.split(command, posix=not sys.platform.startswith('win32'))
+    args = shlex.split(command, posix=True)
+    proc = subprocess.Popen(args,
+                            stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                            shell=False, universal_newlines=True)
+    out, err = proc.communicate()
+    print('err = {!r}'.format(err))
+    print('out = {!r}'.format(out))
+    assert ub.ensure_unicode(out).strip() == ub.ensure_unicode('0\n1\n2\n3\n4')
+
+
 def test_sub_python_simple_stdout_shell_true():
     """
     pytest ubelt/tests/test_platform.py -s --verbose -k test_sub
