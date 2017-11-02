@@ -303,30 +303,60 @@ def _textio_iterlines(stream):
         line = stream.readline()
 
 
+# def _proc_iteroutput_select(proc):  # nocover
+#     """
+#     Iterates over output from a process line by line
+
+#     UNIX only. Use `_proc_iteroutput_thread` instead for a cross platform
+#     solution based on threads.
+
+#     Yields:
+#         tuple[(str, str)]: oline, eline: stdout and stderr line
+#     """
+#     # Read output while the external program is running
+#     import select
+#     while proc.poll() is None:
+#         reads = [proc.stdout.fileno(), proc.stderr.fileno()]
+#         ret = select.select(reads, [], [])
+#         oline = eline = None
+#         for fd in ret[0]:
+#             if fd == proc.stdout.fileno():
+#                 oline = proc.stdout.readline()
+#             if fd == proc.stderr.fileno():
+#                 eline = proc.stderr.readline()
+#         yield oline, eline
+
+#     # Grab any remaining data in stdout and stderr after the process finishes
+#     oline_iter = _textio_iterlines(proc.stdout)
+#     eline_iter = _textio_iterlines(proc.stderr)
+#     for oline, eline in zip_longest(oline_iter, eline_iter):
+#         yield oline, eline
+
+
 def _proc_async_iter_stream(proc, stream, buffersize=100):
     """
     Reads output from a process in a separate thread
     """
     def enqueue_output(proc, stream, stream_queue):
-        import threading
-        existing_threads = list(threading.enumerate())
-        print('existing_threads = {!r}'.format(existing_threads))
+        # import threading
+        # existing_threads = list(threading.enumerate())
+        # print('existing_threads = {!r}'.format(existing_threads))
         while proc.poll() is None:
-            print(proc.poll())
+            # print(proc.poll())
             line = stream.readline()
-            print('ENQUEUE LIVE {!r} {!r}'.format(stream, line))
-            print('putting line2 = {!r}'.format(line))
+            # print('ENQUEUE LIVE {!r} {!r}'.format(stream, line))
+            # print('putting line2 = {!r}'.format(line))
             stream_queue.put(line)
-            print('put line1 = {!r}'.format(line))
-            print(proc.poll())
+            # print('put line1 = {!r}'.format(line))
+            # print(proc.poll())
 
         for line in _textio_iterlines(stream):
-            print('ENQUEUE FINAL {!r} {!r}'.format(stream, line))
-            print('putting line2 = {!r}'.format(line))
+            # print('ENQUEUE FINAL {!r} {!r}'.format(stream, line))
+            # print('putting line2 = {!r}'.format(line))
             stream_queue.put(line)
-            print('put line2 = {!r}'.format(line))
+            # print('put line2 = {!r}'.format(line))
 
-        print("STREAM IS DONE {!r}".format(stream))
+        # print("STREAM IS DONE {!r}".format(stream))
         stream_queue.put(None)  # signal that the stream is finished
         # stream.close()
     stream_queue = queue.Queue(maxsize=buffersize)
@@ -348,7 +378,7 @@ def _proc_iteroutput_thread(proc):
     """
 
     # Create threads that read stdout / stderr and queue up the output
-    print('proc = {!r}'.format(proc))
+    # print('proc = {!r}'.format(proc))
     stdout_queue = _proc_async_iter_stream(proc, proc.stdout)
     stderr_queue = _proc_async_iter_stream(proc, proc.stderr)
 
@@ -357,8 +387,8 @@ def _proc_iteroutput_thread(proc):
 
     # read from the output asychronously until
     while stdout_live or stderr_live:
-        print('stdout_live = {!r}'.format(stdout_live))
-        print('stderr_live = {!r}'.format(stderr_live))
+        # print('stdout_live = {!r}'.format(stdout_live))
+        # print('stderr_live = {!r}'.format(stderr_live))
         if stdout_live:
             try:
                 oline = stdout_queue.get_nowait()
@@ -373,36 +403,6 @@ def _proc_iteroutput_thread(proc):
                 eline = None
         if oline is not None or eline is not None:
             yield oline, eline
-
-
-def _proc_iteroutput_select(proc):  # nocover
-    """
-    Iterates over output from a process line by line
-
-    UNIX only. Use `_proc_iteroutput_thread` instead for a cross platform
-    solution based on threads.
-
-    Yields:
-        tuple[(str, str)]: oline, eline: stdout and stderr line
-    """
-    # Read output while the external program is running
-    import select
-    while proc.poll() is None:
-        reads = [proc.stdout.fileno(), proc.stderr.fileno()]
-        ret = select.select(reads, [], [])
-        oline = eline = None
-        for fd in ret[0]:
-            if fd == proc.stdout.fileno():
-                oline = proc.stdout.readline()
-            if fd == proc.stderr.fileno():
-                eline = proc.stderr.readline()
-        yield oline, eline
-
-    # Grab any remaining data in stdout and stderr after the process finishes
-    oline_iter = _textio_iterlines(proc.stdout)
-    eline_iter = _textio_iterlines(proc.stderr)
-    for oline, eline in zip_longest(oline_iter, eline_iter):
-        yield oline, eline
 
 
 def _proc_tee_output(proc, stdout=None, stderr=None):
