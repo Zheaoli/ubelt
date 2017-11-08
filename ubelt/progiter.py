@@ -14,11 +14,14 @@ __all__ = [
 
 # VT100 ANSI definitions
 # https://en.wikipedia.org/wiki/ANSI_escape_code#CSI_codes
-CLEARLINE_EL0 = '\33[0K'  # clear line to right
-CLEARLINE_EL1 = '\33[1K'  # clear line to left
-CLEARLINE_EL2 = '\33[2K'  # clear line
+# https://stackoverflow.com/questions/47169869/clearing-the-last-line-in-the-terminal-when-text-wraps-around/47170056#47170056
+CLEARLINE_RIGHT = '\33[0K'  # clear line to right
+CLEARLINE_LEFT = '\33[1K'  # clear line to left
+CLEARLINE_FULL = '\33[2K'  # clear line
 DECTCEM_HIDE = '\033[?25l'  # hide cursor
 DECTCEM_SHOW = '\033[?25h'  # show cursor
+
+MOVE_CURSOR_UP_FMT = '\033[{}A'
 
 WIN32 = sys.platform.startswith('win32')
 WITH_ANSI = not WIN32
@@ -34,8 +37,8 @@ if WITH_ANSI:  # pragma: nobranch
     AT_END = '\n'
     CLEAR_AFTER = ''
 else:  # nocover
-    CLEAR_BEFORE = '\r' + CLEARLINE_EL2 + DECTCEM_HIDE
-    CLEAR_AFTER = CLEARLINE_EL0
+    CLEAR_BEFORE = '\r' + CLEARLINE_FULL + DECTCEM_HIDE
+    CLEAR_AFTER = CLEARLINE_RIGHT
     AT_END = DECTCEM_SHOW + '\n'
 
 
@@ -61,6 +64,18 @@ def _infer_length(iterable):
              hint < 0):
             return None
         return hint
+
+
+def get_terminal_width():
+    """
+    Query the terminal for number of character columns.
+    Used for clearning the appropriate amount of lines.
+    """
+    if six.PY3:  # nocover
+        import shutil
+        columns, lines = shutil.get_terminal_size(fallback=(None, None))
+        return columns
+    return None
 
 
 class ProgIter(object):
@@ -100,14 +115,19 @@ class ProgIter(object):
         of the computation if there is a possibility that the entire iterable
         may not be exhausted.
 
+    CommandLine:
+        python -m ubelt.progiter ProgIter -N=10000
+
     Example:
         >>> # doctest: +SKIP
         >>> import ubelt as ub
         >>> def is_prime(n):
         ...     return n >= 2 and not any(n % i == 0 for i in range(2, n))
-        >>> for n in ub.ProgIter(range(100), verbose=1):
+        >>> N = int(ub.argval('-N', default=100))
+        >>> for n in ub.ProgIter(range(N), verbose=1, time_thresh=.5):
         >>>     # do some work
         >>>     is_prime(n)
+
         100/100... rate=301748.49 Hz, total=0:00:00, wall=10:47 EST
     """
     def __init__(self, iterable=None, label=None, length=None, freq=1,
@@ -125,6 +145,8 @@ class ProgIter(object):
                 enabled = False
             elif verbose == 1:  # nocover
                 enabled, clearline, adjust = 1, 1, 1
+            # elif verbose == 1.5:  # nocover
+            #     enabled, clearline, adjust = 1, 1, 0
             elif verbose == 2:  # nocover
                 enabled, clearline, adjust = 1, 0, 1
             elif verbose >= 3:  # nocover
@@ -255,6 +277,7 @@ class ProgIter(object):
         self._max_between_time = -1.0
         self._max_between_count = -1.0
         self._iters_per_second = 0.0
+        self._prev_msg = ''
 
     def begin(self):
         """
@@ -406,14 +429,10 @@ class ProgIter(object):
                     (' total={total},'),
                     (' wall={wall} ' + tzname),
             ]
-        if self.clearline:
-            msg_body = [CLEAR_BEFORE] + msg_body + [CLEAR_AFTER]
-        else:
-            msg_body = msg_body + [AT_END]
         msg_fmtstr_time = ''.join(msg_body)
         return msg_fmtstr_time
 
-    def format_message(self):
+    def current_message(self):
         """ formats the progress template with current values """
         if self._est_seconds_left is None:
             eta = '?'
@@ -468,11 +487,40 @@ class ProgIter(object):
             self.write(AT_END)
             self._cursor_at_newline = True
 
+    def _ansi_formatting(self, msg):
+        """
+        Testing:
+            python -m ubelt.progiter ProgIter -N=100000
+        """
+        # Add ansi formatting to the message
+        if self.clearline:
+            after = '\n'
+            # CLEAR_AFTER
+            # Attempt to clear the previous line in dynamic terminal settings
+            cols = get_terminal_width()
+            if cols is not None and self._prev_msg:
+                n = len(self._prev_msg) // cols + 1
+                cursor_up_n = MOVE_CURSOR_UP_FMT.format(n)
+
+                before = cursor_up_n + CLEARLINE_RIGHT
+            else:
+                # fallback
+                before = CLEAR_BEFORE
+            formatted_msg = before + msg + after
+        else:
+            formatted_msg = msg + AT_END
+        return formatted_msg
+
     def display_message(self):
-        """ Writes current progress to the output stream """
-        msg = self.format_message()
-        self.write(msg)
+        """
+        Writes current progress to the output stream
+        """
+        msg = self.current_message()
+        formatted_msg = self._ansi_formatting(msg)
+        self.write(formatted_msg)
         self.tryflush()
+        # Remember the last message for clearline formatting
+        self._prev_msg = msg
         self._cursor_at_newline = not self.clearline
 
     def tryflush(self):
